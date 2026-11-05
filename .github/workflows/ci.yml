@@ -1,0 +1,95 @@
+name: jcodegen CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm default-jdk golang nodejs python3
+    
+    - name: Build jcodegen
+      run: |
+        make
+        ./jcodegen -h
+    
+    - name: Test C generation
+      run: |
+        ./jcodegen -l c -n 20 -o junk.c
+        gcc junk.c -o junk_c
+        ./junk_c || true
+    
+    - name: Test C++ generation
+      run: |
+        ./jcodegen -l cpp -n 20 -o junk.cpp
+        g++ junk.cpp -o junk_cpp
+        ./junk_cpp || true
+    
+    - name: Test Python generation
+      run: |
+        ./jcodegen -l py -n 20 -o junk.py
+        python3 junk.py
+    
+    - name: Test Go generation
+      run: |
+        ./jcodegen -l go -n 20 -o junk.go
+        go run junk.go
+    
+    - name: Test JavaScript generation
+      run: |
+        ./jcodegen -l js -n 20 -o junk.js
+        node junk.js
+    
+    - name: Test Java generation
+      run: |
+        ./jcodegen -l java -n 20 -o Junk.java
+        javac Junk.java
+        java Junk
+    
+    - name: Test Bash generation
+      run: |
+        ./jcodegen -l bash -n 20 -o junk.sh
+        chmod +x junk.sh
+        ./junk.sh
+    
+    - name: Test HTML generation
+      run: |
+        ./jcodegen -l html -n 20 -o junk.html
+        grep -q "<!DOCTYPE html>" junk.html
+    
+    - name: Test ASM generation
+      run: |
+        ./jcodegen -l asm -n 20 -o junk.asm
+        nasm -f elf64 junk.asm -o junk.o
+        gcc -no-pie junk.o -o junk_asm
+        ./junk_asm || true
+    
+    - name: Test seed reproducibility
+      run: |
+        ./jcodegen -l c -n 10 --seed 12345 -o seed1.c
+        ./jcodegen -l c -n 10 --seed 12345 -o seed2.c
+        diff seed1.c seed2.c
+    
+    - name: Test depth option
+      run: |
+        ./jcodegen -l c -n 10 --depth 1 -o depth1.c
+        gcc -c depth1.c -o depth1.o
+        ./jcodegen -l c -n 10 --depth 5 -o depth5.c
+        gcc -c depth5.c -o depth5.o
+    
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: jcodegen
+        path: jcodegen
