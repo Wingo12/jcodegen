@@ -1,21 +1,3 @@
-/*
- * jcodegen — генератор мусорного кода
- * Copyright (C) 2026 Wingo123
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 #include "jcodegen.h"
 
 static const char *allowed_phrases[] = {
@@ -581,34 +563,36 @@ void gen_asm_body(Generator *g, int ind) {
             break;
         case 1:
             indent(ind);
-            printf("add %s, %s\n", "rax", "rbx");
+            printf("add rax, rbx\n");
             break;
         case 2:
             indent(ind);
-            printf("xor %s, %s\n", "rcx", "rdx");
+            printf("xor rcx, rdx\n");
             break;
         case 3:
             indent(ind);
-            printf("cmp %s, %d\n", "rax", rand_range(0, 255));
+            printf("cmp rax, %d\n", rand_range(0, 255));
             break;
-        case 4:
+        case 4: {
             g->depth++;
+            int loop_id = rand_range(0, 100); // ✅ Запоминаем ID
             indent(ind);
             printf("mov ecx, %d\n", rand_range(3, 10));
             indent(ind);
-            printf(".loop_%d:\n", rand_range(0, 100));
+            printf(".loop_%d:\n", loop_id);
             gen_asm_body(g, ind + 1);
             indent(ind);
             printf("dec ecx\n");
             indent(ind);
-            printf("jnz .loop_%d\n", rand_range(0, 100));
+            printf("jnz .loop_%d\n", loop_id); // ✅ Тот же ID
             g->depth--;
             break;
+        }
         case 5:
             indent(ind);
-            printf("push eax\n");
+            printf("push rax\n");
             indent(ind);
-            printf("pop ebx\n");
+            printf("pop rbx\n");
             break;
     }
     g->line_count++;
@@ -626,8 +610,9 @@ void gen_asm(Generator *g) {
     for (int i = 0; i < rand_range(3, 6); i++) {
         gen_asm_body(g, 0);
     }
-    printf("    mov eax, 0\n");
-    printf("    ret\n");
+    printf("    mov rax, 60\n");
+    printf("    xor rdi, rdi\n");
+    printf("    syscall\n");
 }
 
 // ==================== ДИСПЕТЧЕР ====================
@@ -678,7 +663,7 @@ void generate(Generator *g, Config *cfg) {
     }
 }
 
-// Вспомогательные (нужны для C-режима)
+// Вспомогательные
 void gen_include(Generator *g) {
     if (g->t->id != LANG_C && g->t->id != LANG_CPP) return;
     for (int i = 0; g->t->includes[i]; i++) {

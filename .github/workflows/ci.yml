@@ -68,7 +68,8 @@ jobs:
         ./jcodegen -l html -n 20 -o junk.html
         grep -q "<!DOCTYPE html>" junk.html
     
-    - name: Test ASM generation
+    - name: Test ASM generation (x86_64 only)
+      if: runner.arch == 'X64'
       run: |
         ./jcodegen -l asm -n 20 -o junk.asm
         nasm -f elf64 junk.asm -o junk.o
