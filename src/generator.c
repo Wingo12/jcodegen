@@ -21,7 +21,10 @@ void gen_c_body(Generator *g, int ind) {
     switch (choice) {
         case 0: {
             indent(ind);
-            printf("printf(\"%s\\n\");\n", allowed_phrases[rand_range(0, phrase_count - 1)]);
+            if (g->t->id == LANG_CPP)
+                printf("std::cout << \"%s\" << std::endl;\n", allowed_phrases[rand_range(0, phrase_count - 1)]);
+            else
+                printf("printf(\"%s\\n\");\n", allowed_phrases[rand_range(0, phrase_count - 1)]);
             break;
         }
         case 1: {
@@ -31,7 +34,10 @@ void gen_c_body(Generator *g, int ind) {
             indent(ind);
             printf("int %s = %d;\n", vname, val);
             indent(ind);
-            printf("printf(\"random value: %%d\\n\", %s);\n", vname);
+            if (g->t->id == LANG_CPP)
+                printf("std::cout << \"random value: \" << %s << std::endl;\n", vname);
+            else
+                printf("printf(\"random value: %%d\\n\", %s);\n", vname);
             break;
         }
         case 2: {
@@ -59,17 +65,31 @@ void gen_c_body(Generator *g, int ind) {
             random_var(name, sizeof(name));
             int size = rand_range(5, 20);
             indent(ind);
-            printf("int *%s = malloc(%d * sizeof(int));\n", name, size);
-            indent(ind);
-            printf("if (%s) {\n", name);
-            indent(ind + 1);
-            printf("for (int j = 0; j < %d; j++) %s[j] = j;\n", size, name);
-            indent(ind + 1);
-            printf("(void)%s;\n", name);
-            indent(ind);
-            printf("free(%s);\n", name);
-            indent(ind);
-            printf("}\n");
+            if (g->t->id == LANG_CPP) {
+                printf("int *%s = new int[%d];\n", name, size);
+                indent(ind);
+                printf("if (%s) {\n", name);
+                indent(ind + 1);
+                printf("for (int j = 0; j < %d; j++) %s[j] = j;\n", size, name);
+                indent(ind + 1);
+                printf("(void)%s;\n", name);
+                indent(ind);
+                printf("delete[] %s;\n", name);
+                indent(ind);
+                printf("}\n");
+            } else {
+                printf("int *%s = malloc(%d * sizeof(int));\n", name, size);
+                indent(ind);
+                printf("if (%s) {\n", name);
+                indent(ind + 1);
+                printf("for (int j = 0; j < %d; j++) %s[j] = j;\n", size, name);
+                indent(ind + 1);
+                printf("(void)%s;\n", name);
+                indent(ind);
+                printf("free(%s);\n", name);
+                indent(ind);
+                printf("}\n");
+            }
             break;
         }
         case 5: {
@@ -575,7 +595,7 @@ void gen_asm_body(Generator *g, int ind) {
             break;
         case 4: {
             g->depth++;
-            int loop_id = rand_range(0, 100); // ✅ Запоминаем ID
+            int loop_id = rand_range(0, 100);
             indent(ind);
             printf("mov ecx, %d\n", rand_range(3, 10));
             indent(ind);
@@ -584,7 +604,7 @@ void gen_asm_body(Generator *g, int ind) {
             indent(ind);
             printf("dec ecx\n");
             indent(ind);
-            printf("jnz .loop_%d\n", loop_id); // ✅ Тот же ID
+            printf("jnz .loop_%d\n", loop_id);
             g->depth--;
             break;
         }
